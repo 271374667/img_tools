@@ -1,0 +1,21 @@
+[project]
+name = "img-tools"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "gputil>=1.4.0",
+    "imagededup>=0.3.2",
+    "loguru>=0.7.3",
+    "pillow>=11.2.1",
+    "tqdm>=4.67.1",
+    "typer>=0.15.3",
+    "waifu2x-ncnn-py>=2.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.13.0",
+    "pytest>=8.3.5",
+]
