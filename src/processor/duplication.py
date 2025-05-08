@@ -1,6 +1,7 @@
+import multiprocessing
 from pathlib import Path
 import shutil
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Optional
 from src.core.enums import SaveFileMode, DuplicationMode
 from src.processor import BaseProcessor
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -22,7 +23,7 @@ class Duplication(BaseProcessor):
         img_dir_path: Path | str,
         duplication_mode: DuplicationMode = DuplicationMode.Normal,
         save_file_mode: SaveFileMode = SaveFileMode.SaveFirst,
-        thread_num: int = 4,
+        thread_num: Optional[int] = None,
         override: bool = True,
     ) -> list[Path]:
         """批量处理图片去重
@@ -38,6 +39,7 @@ class Duplication(BaseProcessor):
             处理后图片所在的目录路径列表
         """
         img_dir_path = Path(img_dir_path)
+        thread_num = thread_num if thread_num else IOuitls.get_optimal_process_count()
         if not img_dir_path.exists() or not img_dir_path.is_dir():
             raise ValueError(f"提供的路径 '{img_dir_path}' 不是一个有效的目录。")
 

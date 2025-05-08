@@ -1,10 +1,14 @@
 from pathlib import Path
 from src.core import constants
 from typing import Optional
+import multiprocessing
+
 
 class IOuitls:
     @staticmethod
-    def get_img_paths_by_dir(dir_path: Path, recursion: bool = True, suffix: Optional[tuple[str, ...]] = None) -> list[Path]:
+    def get_img_paths_by_dir(
+        dir_path: Path, recursion: bool = True, suffix: Optional[tuple[str, ...]] = None
+    ) -> list[Path]:
         """
         获取目录下所有图片文件的路径列表。
 
@@ -21,9 +25,20 @@ class IOuitls:
         img_generator = dir_path.glob("*") if not recursion else dir_path.rglob("*")
         suffix_allowed = suffix if suffix else constants.COMMON_IMAGE_SUFFIXES
         for img_path in img_generator:
-            if (
-                img_path.is_file()
-                and img_path.suffix.lower() in suffix_allowed
-            ):
+            if img_path.is_file() and img_path.suffix.lower() in suffix_allowed:
                 img_paths.append(img_path)
         return img_paths
+
+    @staticmethod
+    def get_optimal_process_count() -> int:
+        """获取适合的进程数量"""
+        # 获取系统中的CPU核心数量
+        cpu_count = multiprocessing.cpu_count()
+        # 计算适合的进程数量，约占80%的性能
+        optimal_process_count = max(1, int(cpu_count * 0.8))
+        return optimal_process_count
+
+
+if __name__ == "__main__":
+    io_utils = IOuitls()
+    print(io_utils.get_optimal_process_count())

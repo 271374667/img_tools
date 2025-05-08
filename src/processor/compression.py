@@ -13,7 +13,7 @@ class Compression(BaseProcessor):
         self,
         img_dir_path: Path | str,
         compression: CompressionMode = CompressionMode.Best,
-        thread_num: int = 4,
+        thread_num: Optional[int] = None,
         recursion: bool = True,
         suffix: Optional[tuple[str, ...]] = None,
         override: bool = True,
@@ -32,6 +32,7 @@ class Compression(BaseProcessor):
             处理后的图片所在目录路径
         """
         img_dir_path = Path(img_dir_path)
+        thread_num = thread_num if thread_num else IOuitls.get_optimal_process_count()
 
         if not img_dir_path.exists() or not img_dir_path.is_dir():
             raise ValueError(f"图片目录 '{img_dir_path}' 不存在或不是一个目录。")
