@@ -1,10 +1,13 @@
 import shutil
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Optional, Tuple
 
 from PIL import Image
 from src.core.enums import Orientation, RotationMode
 from src.processor import BaseProcessor
+from src.utils.io_uitls import IOuitls
+from tqdm import tqdm
 
 
 class Rotation(BaseProcessor):
@@ -12,12 +15,112 @@ class Rotation(BaseProcessor):
     一个用于根据指定的方向和模式旋转图片的类。
     """
 
+    def process_dir(
+        self,
+        img_dir_path: Path | str,
+        orientation: Orientation,
+        rotation_mode: RotationMode = RotationMode.Clockwise,
+        thread_num: Optional[int] = None,
+        recursion: bool = True,
+        suffix: Optional[tuple[str, ...]] = None,
+        override: bool = True,
+    ) -> Path:
+        """批量旋转图片"""
+        img_dir_path = Path(img_dir_path)
+        thread_num = thread_num if thread_num else IOuitls.get_optimal_process_count()
+
+        if not img_dir_path.exists() or not img_dir_path.is_dir():
+            raise ValueError(f"图片目录 '{img_dir_path}' 不存在或不是一个目录。")
+
+        # 获取目录下所有图片文件路径
+        img_paths = IOuitls.get_img_paths_by_dir(img_dir_path, recursion, suffix)
+
+        # 确定输出目录
+        output_dir = (
+            img_dir_path
+            if override
+            else img_dir_path.with_name(f"{img_dir_path.stem}_{orientation.value}")
+        )
+
+        # 如果不是覆盖模式，需要预先创建输出目录结构
+        if not override:
+            output_dir.mkdir(exist_ok=True)
+            # 复制子目录结构
+            if recursion:
+                for img_path in img_paths:
+                    # 计算相对路径，保持目录结构
+                    rel_path = img_path.relative_to(img_dir_path)
+                    # 确保目标目录的父目录存在
+                    target_dir = output_dir / rel_path.parent
+                    target_dir.mkdir(parents=True, exist_ok=True)
+
+        # 使用线程池而不是进程池（避免序列化问题）
+        from concurrent.futures import ThreadPoolExecutor
+
+        results = []
+        with ThreadPoolExecutor(max_workers=thread_num) as executor:
+            # 准备任务参数列表
+            tasks = []
+            for img_path in img_paths:
+                if not override:
+                    rel_path = img_path.relative_to(img_dir_path)
+                    target_path = output_dir / rel_path
+                    tasks.append((img_path, target_path))
+                else:
+                    tasks.append((img_path, None))
+
+            # 创建任务并提交
+            futures = []
+            for img_path, target_path in tasks:
+                future = executor.submit(
+                    self._process_single_image,
+                    img_path=img_path,
+                    orientation=orientation,
+                    rotation_mode=rotation_mode,
+                    override=override,
+                    output_path=target_path,
+                )
+                futures.append(future)
+
+            # 使用tqdm显示进度
+            for future in tqdm(
+                as_completed(futures), total=len(futures), desc="旋转图片", unit="张"
+            ):
+                try:
+                    result = future.result()
+                    results.append(result)
+                except Exception as e:
+                    print(f"处理图片时出错: {e}")
+
+        return output_dir
+
+    def _process_single_image(
+        self,
+        img_path: Path,
+        orientation: Orientation,
+        rotation_mode: RotationMode,
+        override: bool,
+        output_path: Optional[Path] = None,
+    ):
+        """处理单个图片（用于并行处理）"""
+        try:
+            return self.process(
+                img_path,
+                orientation=orientation,
+                rotation_mode=rotation_mode,
+                override=override,
+                output_path=output_path,
+            )
+        except Exception as e:
+            return f"Error processing {img_path}: {e}"
+
     def process(
         self,
         img_path: Path | str,
         orientation: Orientation,  # 目标方向
         rotation_mode: RotationMode = RotationMode.Clockwise,
         override: bool = True,
+        output_path: Optional[Path] = None,
     ) -> Optional[Path]:
         """旋转图片
 
@@ -26,6 +129,7 @@ class Rotation(BaseProcessor):
             orientation: 目标旋转方向 (Vertical 或 Horizontal)。
             rotation_mode: 旋转模式 (Clockwise 或 CounterClockwise)。
             override: 是否覆盖原图 (True 则修改原图，False 则保存为带 `_out` 后缀的新文件)。
+            output_path: 指定输出路径（当递归处理目录时使用）
 
         Returns:
             处理后的图片路径；如果处理成功。
@@ -64,9 +168,13 @@ class Rotation(BaseProcessor):
         if override:
             final_path = img_path
         else:
-            # 在扩展名之前创建带有 "_out" 后缀的新路径
-            new_stem = img_path.stem + "_out"
-            final_path = img_path.with_stem(new_stem)  # pathlib 会正确处理后缀
+            # 如果指定了输出路径，则使用指定路径
+            if output_path:
+                final_path = output_path
+            else:
+                # 在扩展名之前创建带有 "_out" 后缀的新路径
+                new_stem = img_path.stem + "_out"
+                final_path = img_path.with_stem(new_stem)  # pathlib 会正确处理后缀
 
         if needs_rotation:
             success = self._perform_rotation_and_save(
@@ -81,7 +189,7 @@ class Rotation(BaseProcessor):
                 # 如果覆盖且不需要旋转，则原文件保持不变，即为结果。
                 return img_path
             else:
-                # 如果不覆盖且不需要旋转，则将原文件复制到新的 '_out' 路径。
+                # 如果不覆盖且不需要旋转，则将原文件复制到新的路径。
                 success = self._copy_file(img_path, final_path)
                 if not success:
                     raise RuntimeError(f"复制 '{img_path}' 到 '{final_path}' 失败。")
