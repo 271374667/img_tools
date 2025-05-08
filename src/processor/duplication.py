@@ -10,14 +10,16 @@ from imagededup.methods import AHash, PHash, WHash
 from imagededup.methods import CNN as CNNHasher
 import loguru
 
+from src.utils.io_uitls import IOuitls
+
 # 使用Python 3.10的语法糖
 HASHER_TYPE = AHash | PHash | WHash | CNNHasher
 
 
 class Duplication(BaseProcessor):
-    def process_batch(
+    def process_dir(
         self,
-        img_dirs: list[Path | str],
+        img_dir_path: Path | str,
         duplication_mode: DuplicationMode = DuplicationMode.Normal,
         save_file_mode: SaveFileMode = SaveFileMode.SaveFirst,
         thread_num: int = 4,
@@ -26,7 +28,7 @@ class Duplication(BaseProcessor):
         """批量处理图片去重
 
         Args:
-            img_dirs: 包含图片的目录路径列表
+            img_dir_path: 需要处理的图片的目录
             duplication_mode: 选择去重算法的模式，默认为 Normal (WHash)
             save_file_mode: 决定保留哪些重复图片的规则，默认为 SaveFirst
             thread_num: 处理器数量 (进程池大小)
@@ -35,8 +37,12 @@ class Duplication(BaseProcessor):
         Returns:
             处理后图片所在的目录路径列表
         """
-        if len(img_dirs) == 0:
-            raise ValueError("图片目录列表不能为空")
+        img_dir_path = Path(img_dir_path)
+        if not img_dir_path.exists() or not img_dir_path.is_dir():
+            raise ValueError(f"提供的路径 '{img_dir_path}' 不是一个有效的目录。")
+
+        # 获取目录下所有图片文件路径
+        img_paths = IOuitls.get_img_paths_by_dir(img_dir_path)
 
         # 创建处理单个目录的函数
         def process_single_directory(img_dir):
@@ -55,7 +61,7 @@ class Duplication(BaseProcessor):
             # 提交所有任务到进程池
             futures = [
                 executor.submit(process_single_directory, img_dir)
-                for img_dir in img_dirs
+                for img_dir in img_paths
             ]
 
             # 使用tqdm创建进度条

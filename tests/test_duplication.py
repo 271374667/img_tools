@@ -145,3 +145,20 @@ def test_save_smaller_strategy(sample_dir):
     # 验证体积较小的文件被保留
     assert (sample_dir / "image3_small.png").exists()
     assert not (sample_dir / "image3_large.png").exists()
+
+
+def test_process_dir(sample_dir):
+    """测试批量处理目录"""
+    deduplicator = Duplication()
+    output_path = deduplicator.process(
+        img_dir=sample_dir,
+        duplication_mode=DuplicationMode.Normal,
+        save_file_mode=SaveFileMode.SaveFirst,
+        override=False,
+    )
+
+    # 验证输出目录存在
+    assert output_path.exists()
+
+    # 验证输出目录中的文件数量减少（去除了重复）
+    assert len(list(output_path.iterdir())) < 8
