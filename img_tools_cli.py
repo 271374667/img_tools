@@ -554,7 +554,14 @@ def show_info():
 class InteractionTUI:
     @staticmethod
     def show_ascii_logo():
-        console.print(Panel(ASCII_LOGO, border_style="cyan", expand=False))
+        console.print(
+            Panel(
+                ASCII_LOGO,
+                border_style="cyan",
+                expand=False,
+                title="欢迎使用图片工具集",
+            ),
+        )
 
     @staticmethod
     def show_main_menu():
@@ -604,7 +611,7 @@ class InteractionTUI:
                     f"[bold red]错误: '{path}' 不是一个文件，请重新输入[/bold red]"
                 )
                 continue
-            console.log(f'[bold green]选择的路径: {path}[/bold green]')
+            console.log(f"[bold green]选择的路径: {path}[/bold green]")
             return path
 
     @staticmethod
@@ -638,7 +645,9 @@ class InteractionTUI:
                 f"请选择一个选项 {default_prompt}", default=default_option
             )
             if choice in enum_dict:
-                console.print(f"[bold green]选择的值: {enum_dict[choice].value}[/bold green]")
+                console.print(
+                    f"[bold green]选择的值: {enum_dict[choice].value}[/bold green]"
+                )
                 return enum_dict[choice]
             else:
                 console.print(
@@ -681,6 +690,7 @@ class InteractionTUI:
     def get_int_input(prompt_text: str, default=None, min_value=None, max_value=None):
         """获取整数输入"""
         from src.utils.io_uitls import IOuitls
+
         default_prompt = f"[默认: {default}]" if default is not None else ""
 
         constraint_text = ""
@@ -1116,7 +1126,7 @@ class InteractionTUI:
             choice = Prompt.ask(
                 "请选择功能",
                 choices=["0", "1", "2", "3", "4", "5"],
-                default="1"
+                default="1",
             )
 
             if choice == "0":
@@ -1138,7 +1148,12 @@ class InteractionTUI:
 
 if __name__ == "__main__":
     try:
-        InteractionTUI.interactive_cli()
+        # 如果有传入选项那么直接执行命令行操作
+        if len(sys.argv) > 1:
+            app()
+        else:
+            # 否则进入交互式命令行
+            InteractionTUI.interactive_cli()
     except KeyboardInterrupt:
         console.print("\n[bold red]程序被用户中断[/bold red]")
         sys.exit(0)

@@ -58,9 +58,9 @@ class Compression(BaseProcessor):
                 shutil.rmtree(output_dir)
             output_dir.mkdir(parents=True, exist_ok=True)
 
-        # 记录一下原图片
-        detect_new_file_generator = IOuitls.detect_new_files(img_dir_path)
-        next(detect_new_file_generator)  # 第一次迭代，记录初始文件集
+            # 记录一下原图片路径
+            detect_new_file_generator = IOuitls.detect_new_files(img_dir_path)
+            next(detect_new_file_generator)  # 第一次迭代，记录初始文件集
 
         # 使用ProcessPoolExecutor进行多进程处理
         with ProcessPoolExecutor(max_workers=thread_num) as executor:
@@ -82,14 +82,14 @@ class Compression(BaseProcessor):
                 if isinstance(result, str) and result.startswith("Error"):
                     print(result)
                 results.append(result)
-
-        # 第二次迭代，获取新增文件
-        new_files = next(detect_new_file_generator)
-        # 将所有新增的文件给移动到输出目录
-        if new_files:
-            for new_file in new_files:
-                # 移动文件
-                new_file.rename(output_dir / new_file.name)
+        if not override:
+            # 第二次迭代，获取新增文件
+            new_files = next(detect_new_file_generator)
+            # 将所有新增的文件给移动到输出目录
+            if new_files:
+                for new_file in new_files:
+                    # 移动文件
+                    new_file.rename(output_dir / new_file.name)
 
         return output_dir
 
