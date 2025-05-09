@@ -1,10 +1,11 @@
-import typer
-from pathlib import Path
-from PIL import Image
-from enum import Enum
 import concurrent.futures
-from tqdm import tqdm
 import logging
+from enum import Enum
+from pathlib import Path
+
+import typer
+from PIL import Image
+from tqdm import tqdm
 
 # Configure logging
 logging.basicConfig(

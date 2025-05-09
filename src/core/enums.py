@@ -23,7 +23,7 @@ class CompressionMode(Enum):
 class SaveFileMode(Enum):
     SaveFirst = "save_first"  # 保存第一张 (按文件名排序)
     SaveLast = "save_last"  # 保存最后一张 (按文件名排序)
-    SaveFirstAndLast = "save_first_and_last" # 保存第一张和最后一张 (按文件名排序)
+    SaveFirstAndLast = "save_first_and_last"  # 保存第一张和最后一张 (按文件名排序)
     SaveBigger = "save_bigger"  # 保存图片文件体积更大的
     SaveSmaller = "save_smaller"  # 保存图片文件体积更小的
 

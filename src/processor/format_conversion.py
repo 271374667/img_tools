@@ -1,6 +1,8 @@
 from pathlib import Path
-from typing import Literal, Final
+from typing import Final, Literal
+
 from PIL import Image
+
 from src.processor import BaseProcessor
 
 # 定义支持的图片格式和对应的 Pillow 内部格式名称的映射

@@ -1,10 +1,12 @@
-from src.processor import BaseProcessor
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
-from src.core.enums import CompressionMode
-from typing import Dict, Tuple, Optional, Any
+from typing import Any, Dict, Optional, Tuple
+
 from PIL import Image, UnidentifiedImageError
 from tqdm import tqdm
-from concurrent.futures import ProcessPoolExecutor, as_completed
+
+from src.core.enums import CompressionMode
+from src.processor import BaseProcessor
 from src.utils.io_uitls import IOuitls
 
 

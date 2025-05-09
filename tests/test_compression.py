@@ -1,10 +1,12 @@
-import pytest
-from pathlib import Path
-import shutil
-from PIL import Image
 import os
-from src.processor.compression import Compression
+import shutil
+from pathlib import Path
+
+import pytest
+from PIL import Image
+
 from src.core.enums import CompressionMode
+from src.processor.compression import Compression
 
 
 class TestCompression:

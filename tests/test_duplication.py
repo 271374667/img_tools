@@ -1,6 +1,7 @@
-import pytest
-from pathlib import Path
 import shutil
+from pathlib import Path
+
+import pytest
 from PIL import Image, ImageDraw
 
 from src.processor.duplication import Duplication, DuplicationMode, SaveFileMode

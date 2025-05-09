@@ -4,10 +4,11 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 from PIL import Image
+from tqdm import tqdm
+
 from src.core.enums import Orientation, RotationMode
 from src.processor import BaseProcessor
 from src.utils.io_uitls import IOuitls
-from tqdm import tqdm
 
 
 class Rotation(BaseProcessor):

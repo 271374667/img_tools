@@ -1,20 +1,88 @@
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Literal, Optional
-import multiprocessing
+
 import GPUtil
-from waifu2x_ncnn_py import Waifu2x
 from PIL import Image
+from tqdm import tqdm
+from waifu2x_ncnn_py import Waifu2x
+
 from src.core import constants
 from src.core.enums import SuperResolutionModel
+from src.utils.io_uitls import IOuitls
 
 
 class SuperResolution:
-    def __init__(self, thread_num: Optional[int] = None):
-        self.thread_num = (
-            max(1, multiprocessing.cpu_count() // 2) if not thread_num else thread_num
+    def process_dir(
+        self,
+        img_dir_path: Path | str,
+        noise: Literal[-1, 0, 1, 2, 3] = 0,
+        scale: Literal[1, 2, 3, 4] = 2,
+        model: SuperResolutionModel = SuperResolutionModel.UpconvAnime,
+        thread_num: Optional[int] = None,
+        recursion: bool = True,
+        suffix: Optional[tuple[str, ...]] = None,
+        override: bool = True,
+    ) -> Path:
+        """批量超分辨率处理图片
+
+        Args:
+            img_dir_path: 图片文件夹路径
+            noise: 降噪等级 (-1, 0, 1, 2, 3)
+            scale: 放大倍数 (1, 2, 3, 4)
+            model: 超分模型
+            thread_num: 处理器数量 (进程池大小)
+            recursion: 是否递归查找子目录中的图片文件
+            suffix: 允许的图片文件后缀名列表(不填则使用默认的常见图片后缀名)
+            override: 是否覆盖原图(True 则修改原图，False 则保存为带 `_out` 后缀的新文件)
+
+        Returns:
+            处理后的图片所在目录路径
+        """
+        img_dir_path = Path(img_dir_path)
+        thread_num = thread_num if thread_num else IOuitls.get_optimal_process_count()
+
+        if not img_dir_path.exists() or not img_dir_path.is_dir():
+            raise ValueError(f"图片目录 '{img_dir_path}' 不存在或不是一个目录。")
+
+        # 获取目录下所有图片文件路径
+        img_paths = IOuitls.get_img_paths_by_dir(img_dir_path, recursion, suffix)
+
+        # 使用ProcessPoolExecutor进行多进程处理
+        with ProcessPoolExecutor(max_workers=thread_num) as executor:
+            # 提交所有任务到进程池，使用静态方法
+            futures = [
+                executor.submit(
+                    SuperResolution._process_wrapper,
+                    img_path,
+                    noise,
+                    scale,
+                    model,
+                    override,
+                )
+                for img_path in img_paths
+            ]
+
+            # 使用tqdm创建进度条
+            results = []
+            desc = f"超分辨率处理(放大{scale}倍，降噪{noise})"
+            for future in tqdm(
+                as_completed(futures), total=len(futures), desc=desc, unit="张"
+            ):
+                result = future.result()
+                # 如果结果是错误消息，则打印出来
+                if isinstance(result, str) and result.startswith("Error"):
+                    print(result)
+                results.append(result)
+
+        # 确定输出目录
+        output_dir = (
+            img_dir_path
+            if override
+            else img_dir_path.with_name(f"{img_dir_path.stem}_sr{scale}x")
         )
-        available_gpus = GPUtil.getFirstAvailable()
-        self._gpu_id = available_gpus[0] if available_gpus else -1
+
+        return output_dir
 
     def process(
         self,
@@ -44,9 +112,8 @@ class SuperResolution:
         if input_img_suffix not in constants.COMMON_IMAGE_SUFFIXES:
             raise ValueError(f"Unsupported image format: {input_img_suffix}")
 
-        waifu2x = Waifu2x(
-            gpuid=self._gpu_id, scale=scale, noise=noise, model=model.value
-        )
+        gpu_id = GPUtil.getFirstAvailable()[0] if GPUtil.getFirstAvailable() else -1
+        waifu2x = Waifu2x(gpuid=gpu_id, scale=scale, noise=noise, model=model.value)
         with Image.open(str(img_path)) as image:
             image = waifu2x.process_pil(image)
             if override:
@@ -57,9 +124,47 @@ class SuperResolution:
                 image.save(str(output_img_path), quality=95)
             return output_img_path
 
+    # 静态方法，用于多进程处理
+
+    def _process_single_image(
+        self,
+        img_path,
+        noise=0,
+        scale=2,
+        model=SuperResolutionModel.UpconvAnime,
+        override=True,
+    ):
+        try:
+            return self.process(
+                img_path, noise=noise, scale=scale, model=model, override=override
+            )
+        except Exception as e:
+            return f"Error processing {img_path}: {e}"
+
+    @staticmethod
+    def _process_wrapper(
+        img_path,
+        noise=0,
+        scale=2,
+        model=SuperResolutionModel.UpconvAnime,
+        override=True,
+    ):
+        # 创建新实例确保线程安全
+        processor = SuperResolution()
+        return processor._process_single_image(
+            img_path, noise=noise, scale=scale, model=model, override=override
+        )
+
 
 if __name__ == "__main__":
     s = SuperResolution()
     # print(s.thread_num)
     # print(GPUtil.getFirstAvailable())
-    print(s.process(r"E:\load\python\Tools\img_tools\测试\megasig.png", noise=3, model=SuperResolutionModel.UpconvPhoto))
+    # print(s.process(r"E:\load\python\Tools\img_tools\测试\megasig.png", noise=3, model=SuperResolutionModel.UpconvPhoto))
+    print(
+        s.process_dir(
+            r"E:\load\python\Tools\img_tools\测试",
+            noise=3,
+            model=SuperResolutionModel.UpconvPhoto,
+        )
+    )

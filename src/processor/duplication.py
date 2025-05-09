@@ -1,16 +1,16 @@
 import multiprocessing
-from pathlib import Path
 import shutil
-from typing import Dict, List, Set, Optional
-from src.core.enums import SaveFileMode, DuplicationMode
-from src.processor import BaseProcessor
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from pathlib import Path
+from typing import Dict, List, Optional, Set
+
+import loguru
+from imagededup.methods import CNN as CNNHasher
+from imagededup.methods import AHash, PHash, WHash
 from tqdm import tqdm
 
-from imagededup.methods import AHash, PHash, WHash
-from imagededup.methods import CNN as CNNHasher
-import loguru
-
+from src.core.enums import DuplicationMode, SaveFileMode
+from src.processor import BaseProcessor
 from src.utils.io_uitls import IOuitls
 
 # 使用Python 3.10的语法糖
@@ -270,4 +270,8 @@ class Duplication(BaseProcessor):
 
 if __name__ == "__main__":
     d = Duplication()
-    d.process(r'G:\CrawlData\kemono\urethra insert\[Zerodo-Degree123]_Modification_of_common_sense_(Lize_Helesta)', DuplicationMode.Fastest, override=False)
+    d.process(
+        r"G:\CrawlData\kemono\urethra insert\[Zerodo-Degree123]_Modification_of_common_sense_(Lize_Helesta)",
+        DuplicationMode.Fastest,
+        override=False,
+    )
