@@ -93,7 +93,7 @@ def test_override_save_bigger(sample_dir):
 def test_save_last_strategy(sample_dir):
     """测试SaveLast策略"""
     deduplicator = Duplication()
-    output_path = deduplicator.process(
+    deduplicator.process(
         img_dir=sample_dir,
         duplication_mode=DuplicationMode.Best,
         save_file_mode=SaveFileMode.SaveLast,
@@ -136,7 +136,7 @@ def test_invalid_directory():
 def test_save_smaller_strategy(sample_dir):
     """测试SaveSmaller策略"""
     deduplicator = Duplication()
-    output_path = deduplicator.process(
+    deduplicator.process(
         img_dir=sample_dir,
         duplication_mode=DuplicationMode.Normal,
         save_file_mode=SaveFileMode.SaveSmaller,

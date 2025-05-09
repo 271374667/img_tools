@@ -12,20 +12,6 @@ from src.utils.io_uitls import IOuitls
 
 class Compression(BaseProcessor):
     # 新增的辅助方法，替代原先的嵌套函数
-    def _process_single_image(
-        self, img_path, compression=CompressionMode.Best, override=True
-    ):
-        try:
-            return self.process(img_path, compression=compression, override=override)
-        except Exception as e:
-            return f"Error processing {img_path}: {e}"
-
-    @staticmethod
-    def _process_wrapper(img_path, compression=CompressionMode.Best, override=True):
-        # 创建新实例确保线程安全
-        processor = Compression()
-        return processor._process_single_image(img_path, compression, override)
-
     def process_dir(
         self,
         img_dir_path: Path | str,
@@ -194,6 +180,20 @@ class Compression(BaseProcessor):
             img.close()
             # 副本(current_img, prepared_img)将被垃圾回收
             return output_path
+
+    def _process_single_image(
+        self, img_path, compression=CompressionMode.Best, override=True
+    ):
+        try:
+            return self.process(img_path, compression=compression, override=override)
+        except Exception as e:
+            return f"Error processing {img_path}: {e}"
+
+    @staticmethod
+    def _process_wrapper(img_path, compression=CompressionMode.Best, override=True):
+        # 创建新实例确保线程安全
+        processor = Compression()
+        return processor._process_single_image(img_path, compression, override)
 
     def _determine_target_format_and_path(
         self,

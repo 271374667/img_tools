@@ -189,7 +189,7 @@ class TestRotation:
         rotator = Rotation()
 
         # 获取处理前所有图片(包括子目录)
-        all_files_before = list(sample_dir.glob("**/*.png"))
+        list(sample_dir.glob("**/*.png"))
         sub_files_before = list((sample_dir / "subdir").glob("*.png"))
         assert len(sub_files_before) > 0  # 确保子目录有文件
 

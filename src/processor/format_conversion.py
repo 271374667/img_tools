@@ -1,9 +1,12 @@
+from concurrent.futures import as_completed, ProcessPoolExecutor
 from pathlib import Path
-from typing import Final, Literal
+from typing import Final, Literal, Optional
+import shutil
 
 from PIL import Image
-
+from tqdm import tqdm
 from src.processor import BaseProcessor
+from src.utils.io_uitls import IOuitls
 
 # 定义支持的图片格式和对应的 Pillow 内部格式名称的映射
 # Pillow 对于 JPEG 格式通常使用 'JPEG'，无论后缀是 'jpg' 还是 'jpeg'
@@ -14,24 +17,80 @@ _FORMAT_MAP: Final[dict[str, str]] = {
     "png": "PNG",
     "bmp": "BMP",
     "webp": "WEBP",
-    "svg": "SVG",  # Pillow 对 SVG 的支持可能有限，特别是从栅格到矢量的转换
 }
 
 
 class FormatConversion(BaseProcessor):
     """将图片转换为指定格式的类"""
 
+    def process_dir(
+        self,
+        img_dir_path: Path | str,
+        target_format: Literal["jpg", "jpeg", "png", "bmp", "webp"],
+        thread_num: Optional[int] = None,
+        recursion: bool = True,
+        suffix: Optional[tuple[str, ...]] = None,
+        override: bool = True,
+    ) -> Path:
+        """批量转换图片格式"""
+        img_dir_path = Path(img_dir_path)
+        thread_num = thread_num if thread_num else IOuitls.get_optimal_process_count()
+
+        if not img_dir_path.exists() or not img_dir_path.is_dir():
+            raise ValueError(f"图片目录 '{img_dir_path}' 不存在或不是一个目录。")
+
+        # 获取目录下所有图片文件路径
+        img_paths = IOuitls.get_img_paths_by_dir(img_dir_path, recursion, suffix)
+
+        # 确定输出目录
+        output_dir = (
+            img_dir_path
+            if override
+            else img_dir_path.with_name(img_dir_path.stem + f"_{target_format}")
+        )
+
+        # 创建输出目录(如果不覆盖原图)
+        if not override:
+            output_dir.mkdir(exist_ok=True, parents=True)
+
+        # 使用ProcessPoolExecutor进行多进程处理
+        with ProcessPoolExecutor(max_workers=thread_num) as executor:
+            # 提交所有任务到进程池，使用静态方法
+            futures = [
+                executor.submit(
+                    FormatConversion._process_wrapper,
+                    img_path,
+                    target_format,
+                    override,
+                    None if override else output_dir,
+                )
+                for img_path in img_paths
+            ]
+
+            # 使用tqdm创建进度条
+            results = []
+            for future in tqdm(
+                as_completed(futures), total=len(futures), desc="转换格式", unit="张"
+            ):
+                result = future.result()
+                # 如果结果是错误消息，则打印出来
+                if isinstance(result, str) and result.startswith("Error"):
+                    print(result)
+                results.append(result)
+
+        return output_dir
+
     def process(
         self,
         img_path: Path | str,
-        target_format: Literal["jpg", "jpeg", "png", "bmp", "webp", "svg"],
+        target_format: Literal["jpg", "jpeg", "png", "bmp", "webp"],
         override: bool = True,
     ) -> Path:
         """将图片转换为指定格式
 
         Args:
             img_path: 图片路径。
-            target_format: 目标格式 (jpg, jpeg, png, bmp, webp, svg)。
+            target_format: 目标格式 (jpg, jpeg, png, bmp, webp)。
             override: 是否覆盖原图 (True 则修改原图，False 则保存为带 `_out` 后缀的新文件)。
 
         Returns:
@@ -119,6 +178,58 @@ class FormatConversion(BaseProcessor):
         else:
             # 不覆盖原图，在原文件名基础上添加 _out 后缀，并修改为目标格式后缀
             return img_path.with_name(f"{img_path.stem}_out.{target_format.lower()}")
+
+    def _process_single_image(
+        self, img_path, target_format, override=True, output_dir=None
+    ):
+        try:
+            img_path = Path(img_path)
+            if override:
+                return self.process(
+                    img_path, target_format=target_format, override=override
+                )
+            else:
+                # 处理子目录结构
+                # 计算相对路径
+                if output_dir:
+                    # 获取原始文件的父目录路径
+                    original_dir = img_path.parent
+                    # 计算相对于主目录的路径
+                    rel_path = img_path.relative_to(original_dir.parent)
+                    # 创建目标目录加相对路径
+                    target_dir = output_dir / rel_path.parent
+                    target_dir.mkdir(parents=True, exist_ok=True)
+
+                    # 处理文件并转换格式
+                    result = self.process(
+                        img_path, target_format=target_format, override=False
+                    )
+
+                    # 构建最终输出路径（保留原始文件名，但修改扩展名）
+                    final_path = target_dir / f"{img_path.stem}.{target_format}"
+
+                    if result.exists():
+                        # 复制到新位置
+                        shutil.copy2(result, final_path)
+                        # 删除原临时文件
+                        result.unlink()
+
+                    return final_path
+                else:
+                    # 如果没有指定输出目录，则只执行普通处理
+                    return self.process(
+                        img_path, target_format=target_format, override=False
+                    )
+        except Exception as e:
+            return f"Error processing {img_path}: {e}"
+
+    @staticmethod
+    def _process_wrapper(img_path, target_format, override=True, output_dir=None):
+        # 创建新实例确保线程安全
+        processor = FormatConversion()
+        return processor._process_single_image(
+            img_path, target_format, override, output_dir
+        )
 
 
 if __name__ == "__main__":

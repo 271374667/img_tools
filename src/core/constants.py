@@ -7,5 +7,4 @@ COMMON_IMAGE_SUFFIXES: Final[tuple[str, ...]] = (
     ".gif",
     ".bmp",
     ".webp",
-    ".svg",
 )
