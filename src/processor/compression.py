@@ -9,6 +9,21 @@ from src.utils.io_uitls import IOuitls
 
 
 class Compression(BaseProcessor):
+    # 新增的辅助方法，替代原先的嵌套函数
+    def _process_single_image(
+        self, img_path, compression=CompressionMode.Best, override=True
+    ):
+        try:
+            return self.process(img_path, compression=compression, override=override)
+        except Exception as e:
+            return f"Error processing {img_path}: {e}"
+
+    @staticmethod
+    def _process_wrapper(img_path, compression=CompressionMode.Best, override=True):
+        # 创建新实例确保线程安全
+        processor = Compression()
+        return processor._process_single_image(img_path, compression, override)
+
     def process_dir(
         self,
         img_dir_path: Path | str,
@@ -40,20 +55,13 @@ class Compression(BaseProcessor):
         # 获取目录下所有图片文件路径
         img_paths = IOuitls.get_img_paths_by_dir(img_dir_path, recursion, suffix)
 
-        # 创建处理单个图片的函数
-        def process_single_image(img_path):
-            try:
-                return self.process(
-                    img_path, compression=compression, override=override
-                )
-            except Exception as e:
-                return f"Error processing {img_path}: {e}"
-
         # 使用ProcessPoolExecutor进行多进程处理
         with ProcessPoolExecutor(max_workers=thread_num) as executor:
-            # 提交所有任务到进程池
+            # 提交所有任务到进程池，使用静态方法
             futures = [
-                executor.submit(process_single_image, img_path)
+                executor.submit(
+                    Compression._process_wrapper, img_path, compression, override
+                )
                 for img_path in img_paths
             ]
 
