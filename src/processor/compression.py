@@ -1,6 +1,6 @@
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, overload
 
 from PIL import Image, UnidentifiedImageError
 from tqdm import tqdm
@@ -43,6 +43,25 @@ class Compression(BaseProcessor):
         # 获取目录下所有图片文件路径
         img_paths = IOuitls.get_img_paths_by_dir(img_dir_path, recursion, suffix)
 
+        # 确定输出目录
+        output_dir = (
+            img_dir_path
+            if override
+            else img_dir_path.with_name(img_dir_path.stem + f"_{compression.value}")
+        )
+
+        # 如果不覆盖原文件，则创建输出目录(若已存在则先删除)
+        if not override:
+            import shutil
+
+            if output_dir.exists():
+                shutil.rmtree(output_dir)
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+        # 记录一下原图片
+        detect_new_file_generator = IOuitls.detect_new_files(img_dir_path)
+        next(detect_new_file_generator)  # 第一次迭代，记录初始文件集
+
         # 使用ProcessPoolExecutor进行多进程处理
         with ProcessPoolExecutor(max_workers=thread_num) as executor:
             # 提交所有任务到进程池，使用静态方法
@@ -64,12 +83,13 @@ class Compression(BaseProcessor):
                     print(result)
                 results.append(result)
 
-        # 确定输出目录
-        output_dir = (
-            img_dir_path
-            if override
-            else img_dir_path.with_name(img_dir_path.stem + f"_{compression.value}")
-        )
+        # 第二次迭代，获取新增文件
+        new_files = next(detect_new_file_generator)
+        # 将所有新增的文件给移动到输出目录
+        if new_files:
+            for new_file in new_files:
+                # 移动文件
+                new_file.rename(output_dir / new_file.name)
 
         return output_dir
 
@@ -345,4 +365,5 @@ class Compression(BaseProcessor):
 
 if __name__ == "__main__":
     c = Compression()
-    print(c.process(Path(r"G:\CrawlData\kemono\RoundsChen\PIC2024.02\dif_01.jpg")))
+    # print(c.process(Path(r"G:\CrawlData\kemono\RoundsChen\PIC2024.02\dif_01.jpg")))
+    print(c.process_dir(r'G:\CrawlData\kemono\RoundsChen\PIC2024.02', override=False))
