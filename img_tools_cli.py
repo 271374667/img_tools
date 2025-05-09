@@ -1147,6 +1147,9 @@ class InteractionTUI:
             input("\n按Enter键继续...")
 
 if __name__ == "__main__":
+    from PIL import Image
+    Image.MAX_IMAGE_PIXELS = None
+
     try:
         # 如果有传入选项那么直接执行命令行操作
         if len(sys.argv) > 1:

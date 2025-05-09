@@ -7,6 +7,7 @@ from PIL import Image
 from tqdm import tqdm
 from src.processor import BaseProcessor
 from src.utils.io_uitls import IOuitls
+import loguru
 
 # 定义支持的图片格式和对应的 Pillow 内部格式名称的映射
 # Pillow 对于 JPEG 格式通常使用 'JPEG'，无论后缀是 'jpg' 还是 'jpeg'
@@ -81,7 +82,7 @@ class FormatConversion(BaseProcessor):
                 result = future.result()
                 # 如果结果是错误消息，则打印出来
                 if isinstance(result, str) and result.startswith("Error"):
-                    print(result)
+                    loguru.logger.error(result)
                 results.append(result)
 
         if not override:
@@ -90,7 +91,7 @@ class FormatConversion(BaseProcessor):
             if new_files:
                 for new_file in new_files:
                     # 移动文件
-                    new_file.rename(output_dir / new_file.name)
+                    shutil.move(new_file, output_dir / new_file.name)
 
         return output_dir
 
@@ -203,26 +204,18 @@ class FormatConversion(BaseProcessor):
                     img_path, target_format=target_format, override=override
                 )
             else:
-                # 处理子目录结构
-                # 计算相对路径
                 if output_dir:
-                    # 获取原始文件的父目录路径
-                    original_dir = img_path.parent
-                    # 计算相对于主目录的路径
-                    rel_path = img_path.relative_to(original_dir.parent)
-                    # 创建目标目录加相对路径
-                    target_dir = output_dir / rel_path.parent
-                    target_dir.mkdir(parents=True, exist_ok=True)
+                    # 直接使用原始文件名创建目标路径，不保留原始目录结构
+                    final_path = output_dir / f"{img_path.stem}.{target_format}"
 
                     # 处理文件并转换格式
                     result = self.process(
                         img_path, target_format=target_format, override=False
                     )
 
-                    # 构建最终输出路径（保留原始文件名，但修改扩展名）
-                    final_path = target_dir / f"{img_path.stem}.{target_format}"
-
                     if result.exists():
+                        # 确保目标目录存在
+                        output_dir.mkdir(parents=True, exist_ok=True)
                         # 复制到新位置
                         shutil.copy2(result, final_path)
                         # 删除原临时文件
@@ -230,10 +223,7 @@ class FormatConversion(BaseProcessor):
 
                     return final_path
                 else:
-                    # 如果没有指定输出目录，则只执行普通处理
-                    return self.process(
-                        img_path, target_format=target_format, override=False
-                    )
+                    return self.process(img_path, target_format=target_format, override=False)
         except Exception as e:
             return f"Error processing {img_path}: {e}"
 
@@ -249,6 +239,6 @@ class FormatConversion(BaseProcessor):
 if __name__ == "__main__":
     # 测试代码
     converter = FormatConversion()
-    input_path = Path(r"G:\CrawlData\kemono\RoundsChen\PIC2024.02\dif_01.jpg")
-    output_path = converter.process(input_path, "webp", override=False)
+    input_path = Path(r"G:\CrawlData\kemono\RoundsChen\PIC2024.02")
+    output_path = converter.process_dir(input_path, "webp", override=False)
     print(f"Converted image saved at: {output_path}")
