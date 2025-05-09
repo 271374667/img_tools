@@ -1,6 +1,6 @@
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, overload
+from typing import Any, Dict, Optional, Tuple
 
 from PIL import Image, UnidentifiedImageError
 from tqdm import tqdm
@@ -366,4 +366,4 @@ class Compression(BaseProcessor):
 if __name__ == "__main__":
     c = Compression()
     # print(c.process(Path(r"G:\CrawlData\kemono\RoundsChen\PIC2024.02\dif_01.jpg")))
-    print(c.process_dir(r'G:\CrawlData\kemono\RoundsChen\PIC2024.02', override=False))
+    print(c.process_dir(r"G:\CrawlData\kemono\RoundsChen\PIC2024.02", override=False))

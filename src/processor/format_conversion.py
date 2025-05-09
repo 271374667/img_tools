@@ -223,7 +223,9 @@ class FormatConversion(BaseProcessor):
 
                     return final_path
                 else:
-                    return self.process(img_path, target_format=target_format, override=False)
+                    return self.process(
+                        img_path, target_format=target_format, override=False
+                    )
         except Exception as e:
             return f"Error processing {img_path}: {e}"
 

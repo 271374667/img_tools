@@ -628,7 +628,6 @@ class InteractionTUI:
         default_option = None
 
         for i, option in enumerate(enum_class, 1):
-            option_name = option.name
             option_value = option.value
             description = InteractionTUI.get_enum_description(enum_class, option)
             table.add_row(str(i), option_value, description)
@@ -1146,8 +1145,10 @@ class InteractionTUI:
             # 每次处理完操作后暂停，让用户可以查看结果
             input("\n按Enter键继续...")
 
+
 if __name__ == "__main__":
     from PIL import Image
+
     Image.MAX_IMAGE_PIXELS = None
 
     try:
