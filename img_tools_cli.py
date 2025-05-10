@@ -549,6 +549,7 @@ if __name__ == "__main__":
             app()
         else:
             from interaction_tui import InteractionTUI
+
             # 否则进入交互式命令行
             InteractionTUI.interactive_cli()
     except KeyboardInterrupt:

@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 # 用于格式转换的格式枚举
 class ImageFormat(str, Enum):
     JPG = "jpg"
@@ -7,6 +8,7 @@ class ImageFormat(str, Enum):
     PNG = "png"
     BMP = "bmp"
     WEBP = "webp"
+
 
 # 下面是图片旋转的模式
 class Orientation(Enum):

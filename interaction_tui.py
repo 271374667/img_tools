@@ -801,8 +801,12 @@ class InteractionTUI:
             # 每次处理完操作后暂停，让用户可以查看结果
             input("\n按Enter键继续...")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
+    import warnings
     from PIL import Image
+
+    warnings.filterwarnings("ignore")
 
     Image.MAX_IMAGE_PIXELS = None
 

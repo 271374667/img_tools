@@ -244,8 +244,9 @@ class Compression(BaseProcessor):
     ):
         # 创建新实例确保线程安全
         processor = Compression()
-        return processor._process_single_image(img_path, compression, override, output_dir)
-
+        return processor._process_single_image(
+            img_path, compression, override, output_dir
+        )
 
     def _determine_target_format_and_path(
         self,
