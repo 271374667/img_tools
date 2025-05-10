@@ -1,5 +1,4 @@
 import sys
-from enum import Enum
 from pathlib import Path
 from typing import Optional
 import loguru
@@ -12,6 +11,7 @@ from src.core.enums import (
     RotationMode,
     SaveFileMode,
     SuperResolutionModel,
+    ImageFormat,
 )
 from rich.table import Table
 from rich.console import Console
@@ -41,15 +41,6 @@ app.add_typer(rotation_app, name="rotate", help="旋转图片方向")
 app.add_typer(format_app, name="convert", help="转换图片格式")
 app.add_typer(duplication_app, name="dedup", help="检测并删除重复图片")
 app.add_typer(super_resolution_app, name="upscale", help="提高图片分辨率")
-
-
-# 用于格式转换的格式枚举
-class ImageFormat(str, Enum):
-    JPG = "jpg"
-    JPEG = "jpeg"
-    PNG = "png"
-    BMP = "bmp"
-    WEBP = "webp"
 
 
 @compression_app.command("dir")

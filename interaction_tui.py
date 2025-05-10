@@ -1,10 +1,8 @@
 import sys
 import time
-from enum import Enum
 from pathlib import Path
 from typing import Optional
 import loguru
-import typer
 
 from src.core.enums import (
     CompressionMode,
@@ -13,6 +11,7 @@ from src.core.enums import (
     RotationMode,
     SaveFileMode,
     SuperResolutionModel,
+    ImageFormat,
 )
 from src.core.constants import ASCII_LOGO
 from rich.panel import Panel
@@ -28,6 +27,7 @@ logger.add(sys.stderr, level="INFO")
 
 # 创建富文本控制台对象
 console = Console()
+
 
 class ChinesePrompt(Prompt):
     validate_error_message = "[prompt.invalid]请输入一个有效的选项！"
