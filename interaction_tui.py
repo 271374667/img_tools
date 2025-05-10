@@ -13,7 +13,7 @@ from src.core.enums import (
     SuperResolutionModel,
     ImageFormat,
 )
-from src.core.constants import ASCII_LOGO
+from src.core.constants import ASCII_LOGO, COMMON_IMAGE_SUFFIXES
 from rich.panel import Panel
 from rich.table import Table
 from rich.console import Console
@@ -44,6 +44,24 @@ class InteractionTUI:
     suffix: Optional[tuple[str, ...]] = None
     thread_num: Optional[int] = None
 
+    args_explain: Optional[dict] = {
+        "img_dir_path": "图片目录路径(目录)",
+        "img_path": "图片文件路径(单个文件)",
+        "suffix": "图片后缀名列表",
+        "thread_num": "处理器数量",
+        "recursion": "是否递归查找子目录中的图片文件",
+        "override": "是否覆盖原图",
+        "compression": "压缩模式",
+        "rotation_mode": "旋转模式",
+        "orientation": "目标方向",
+        "duplication_mode": "去重模式",
+        "save_file_mode": "文件保存模式",
+        "target_format": "目标格式",
+        "noise": "降噪等级",
+        "scale": "放大倍数",
+        "model": "超分模型",
+    }
+
     @staticmethod
     def show_ascii_logo():
         console.print(
@@ -71,6 +89,23 @@ class InteractionTUI:
         table.add_row("5", "超分辨率", "提高图片分辨率与清晰度")
         table.add_row("9", "全局设置", "设置全局参数(线程数/图片后缀等)")
         table.add_row("0", "退出程序", "结束程序运行")
+
+        console.print(table)
+
+    @staticmethod
+    def show_args_menu(**kwargs):
+        """在开始之前显示参数设置"""
+        table = Table(
+            title="当前参数设置", show_header=True, header_style="bold magenta"
+        )
+        table.add_column("参数", style="cyan", justify="center")
+        table.add_column("说明", style="yellow")
+        table.add_column("值", style="green")
+
+        for key, value in kwargs.items():
+            table.add_row(
+                key, InteractionTUI.args_explain.get(key, "无说明"), str(value)
+            )
 
         console.print(table)
 
@@ -123,7 +158,7 @@ class InteractionTUI:
 
         for i, option in enumerate(enum_class, 1):
             option_value = option.value
-            description = InteractionTUI.get_enum_description(enum_class, option)
+            description = InteractionTUI.get_enum_description(option)
             table.add_row(str(i), option_value, description)
             enum_dict[i] = option
             if default and option == default:
@@ -148,7 +183,7 @@ class InteractionTUI:
                 )
 
     @staticmethod
-    def get_enum_description(enum_class, option):
+    def get_enum_description(option):
         """获取枚举选项的描述信息"""
         descriptions = {
             CompressionMode.Fastest: "最快速度，适中压缩率",
@@ -247,6 +282,17 @@ class InteractionTUI:
             )
             override = InteractionTUI.get_bool_input("是否覆盖原始图片?", default=True)
 
+            InteractionTUI.show_args_menu(
+                img_dir_path=img_dir,
+                compression=mode,
+                thread_num=threads,
+                recursion=recursion,
+                override=override,
+                suffix=InteractionTUI.suffix
+                if InteractionTUI.suffix
+                else COMMON_IMAGE_SUFFIXES,
+            )
+
             start_time = time.time()
             try:
                 from src.processor.compression import Compression
@@ -331,6 +377,18 @@ class InteractionTUI:
             )
             override = InteractionTUI.get_bool_input("是否覆盖原始图片?", default=True)
 
+            InteractionTUI.show_args_menu(
+                img_dir_path=img_dir,
+                orientation=orientation,
+                rotation_mode=mode,
+                thread_num=threads,
+                recursion=recursion,
+                override=override,
+                suffix=InteractionTUI.suffix
+                if InteractionTUI.suffix
+                else COMMON_IMAGE_SUFFIXES,
+            )
+
             start_time = time.time()
             try:
                 from src.processor.rotation import Rotation
@@ -344,7 +402,9 @@ class InteractionTUI:
                     thread_num=threads,
                     recursion=recursion,
                     override=override,
-                    suffix=InteractionTUI.suffix if InteractionTUI.suffix else None,
+                    suffix=InteractionTUI.suffix
+                    if InteractionTUI.suffix
+                    else COMMON_IMAGE_SUFFIXES,
                 )
                 elapsed = time.time() - start_time
                 console.print(
@@ -419,6 +479,17 @@ class InteractionTUI:
             )
             override = InteractionTUI.get_bool_input("是否覆盖原始图片?", default=True)
 
+            InteractionTUI.show_args_menu(
+                img_dir_path=img_dir,
+                target_format=format.value,
+                thread_num=threads,
+                recursion=recursion,
+                override=override,
+                suffix=InteractionTUI.suffix
+                if InteractionTUI.suffix
+                else COMMON_IMAGE_SUFFIXES,
+            )
+
             start_time = time.time()
             try:
                 from src.processor.format_conversion import FormatConversion
@@ -431,7 +502,9 @@ class InteractionTUI:
                     thread_num=threads,
                     recursion=recursion,
                     override=override,
-                    suffix=InteractionTUI.suffix if InteractionTUI.suffix else None,
+                    suffix=InteractionTUI.suffix
+                    if InteractionTUI.suffix
+                    else COMMON_IMAGE_SUFFIXES,
                 )
                 elapsed = time.time() - start_time
                 console.print(
@@ -496,6 +569,14 @@ class InteractionTUI:
             "是否在原目录中删除重复图片?", default=True
         )
 
+        InteractionTUI.show_args_menu(
+            img_dir_path=img_dir,
+            duplication_mode=mode,
+            save_file_mode=save_mode,
+            override=override,
+            thread_num=threads,
+        )
+
         start_time = time.time()
         try:
             from src.processor.duplication import Duplication
@@ -556,6 +637,19 @@ class InteractionTUI:
             )
             override = InteractionTUI.get_bool_input("是否覆盖原始图片?", default=True)
 
+            InteractionTUI.show_args_menu(
+                img_dir_path=img_dir,
+                noise=noise,
+                scale=scale,
+                model=model,
+                thread_num=threads,
+                recursion=recursion,
+                override=override,
+                suffix=InteractionTUI.suffix
+                if InteractionTUI.suffix
+                else COMMON_IMAGE_SUFFIXES,
+            )
+
             start_time = time.time()
             try:
                 from src.processor.super_resolution import SuperResolution
@@ -570,7 +664,9 @@ class InteractionTUI:
                     thread_num=threads,
                     recursion=recursion,
                     override=override,
-                    suffix=InteractionTUI.suffix if InteractionTUI.suffix else None,
+                    suffix=InteractionTUI.suffix
+                    if InteractionTUI.suffix
+                    else COMMON_IMAGE_SUFFIXES,
                 )
                 elapsed = time.time() - start_time
                 console.print(

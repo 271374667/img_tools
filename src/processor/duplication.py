@@ -24,7 +24,7 @@ class Duplication(BaseProcessor):
         save_file_mode: SaveFileMode = SaveFileMode.SaveFirst,
         thread_num: Optional[int] = None,
         override: bool = True,
-    ) -> list[Path]:
+    ) -> Path:
         """批量处理图片去重
 
         Args:
@@ -38,48 +38,10 @@ class Duplication(BaseProcessor):
             处理后图片所在的目录路径列表
         """
         img_dir_path = Path(img_dir_path)
-        thread_num = thread_num if thread_num else IOuitls.get_optimal_process_count()
         if not img_dir_path.exists() or not img_dir_path.is_dir():
             raise ValueError(f"提供的路径 '{img_dir_path}' 不是一个有效的目录。")
 
-        # 获取目录下所有图片文件路径
-        img_paths = IOuitls.get_img_paths_by_dir(img_dir_path)
-
-        # 创建处理单个目录的函数
-        def process_single_directory(img_dir):
-            try:
-                return self.process(
-                    img_dir,
-                    duplication_mode=duplication_mode,
-                    save_file_mode=save_file_mode,
-                    override=override,
-                )
-            except Exception as e:
-                return f"Error processing {img_dir}: {e}"
-
-        # 使用ProcessPoolExecutor进行多进程处理
-        with ProcessPoolExecutor(max_workers=thread_num) as executor:
-            # 提交所有任务到进程池
-            futures = [
-                executor.submit(process_single_directory, img_dir)
-                for img_dir in img_paths
-            ]
-
-            # 使用tqdm创建进度条
-            results = []
-            for future in tqdm(
-                as_completed(futures),
-                total=len(futures),
-                desc="处理图片去重",
-                unit="目录",
-            ):
-                result = future.result()
-                # 如果结果是错误消息，则打印出来
-                if isinstance(result, str) and result.startswith("Error"):
-                    loguru.logger.error(result)
-                results.append(result)
-
-        return results
+        return self.process(img_dir_path, duplication_mode, save_file_mode, override)
 
     def process(
         self,
@@ -231,29 +193,34 @@ class Duplication(BaseProcessor):
             if not current_group_paths:
                 continue  # 如果组为空或文件不存在，则跳过
 
-            # 使用Python 3.10的match语句选择保留文件的策略
+            # 初始化一个列表来保存要保留的文件
+            files_to_keep: List[Path] = []
+
+            # 使用match语句选择保留文件的策略
             match save_file_mode:
                 case SaveFileMode.SaveFirst:
-                    file_to_keep_in_group = sorted(
-                        current_group_paths, key=lambda p: p.name
-                    )[0]
-                case SaveFileMode.SaveLast:
-                    file_to_keep_in_group = sorted(
-                        current_group_paths, key=lambda p: p.name
-                    )[-1]
-                case SaveFileMode.SaveFirstAndLast:
-                    file_to_keep_in_group = [
-                        sorted(current_group_paths, key=lambda p: p.name)[0],
-                        sorted(current_group_paths, key=lambda p: p.name)[-1],
+                    files_to_keep = [
+                        sorted(current_group_paths, key=lambda p: p.name)[0]
                     ]
+                case SaveFileMode.SaveLast:
+                    files_to_keep = [
+                        sorted(current_group_paths, key=lambda p: p.name)[-1]
+                    ]
+                case SaveFileMode.SaveFirstAndLast:
+                    sorted_files = sorted(current_group_paths, key=lambda p: p.name)
+                    # 如果只有一个文件，就只保留它
+                    if len(sorted_files) == 1:
+                        files_to_keep = [sorted_files[0]]
+                    else:
+                        files_to_keep = [sorted_files[0], sorted_files[-1]]
                 case SaveFileMode.SaveBigger:
-                    file_to_keep_in_group = max(
-                        current_group_paths, key=lambda p: p.stat().st_size
-                    )
+                    files_to_keep = [
+                        max(current_group_paths, key=lambda p: p.stat().st_size)
+                    ]
                 case SaveFileMode.SaveSmaller:
-                    file_to_keep_in_group = min(
-                        current_group_paths, key=lambda p: p.stat().st_size
-                    )
+                    files_to_keep = [
+                        min(current_group_paths, key=lambda p: p.stat().st_size)
+                    ]
                 case _:
                     raise ValueError(f"未知的保存文件模式: {save_file_mode}")
 
@@ -261,7 +228,7 @@ class Duplication(BaseProcessor):
             files_to_delete_final.update(
                 file_path
                 for file_path in current_group_paths
-                if file_path != file_to_keep_in_group
+                if file_path not in files_to_keep  # 使用 not in 而不是 !=
             )
 
         return files_to_delete_final
