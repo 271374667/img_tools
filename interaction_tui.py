@@ -106,7 +106,6 @@ class InteractionTUI:
                     f"[bold red]错误: '{path}' 不是一个文件，请重新输入[/bold red]"
                 )
                 continue
-            console.log(f"[bold green]选择的路径: {path}[/bold green]")
             return path
 
     @staticmethod
@@ -210,7 +209,6 @@ class InteractionTUI:
 
             if "线程" in prompt_text:
                 value = IOuitls.get_optimal_process_count() if value is None else value
-            console.print(f"[bold green]选择的值: {value}[/bold green]")
             return value
 
     @staticmethod
@@ -219,7 +217,6 @@ class InteractionTUI:
         result = Confirm.ask(
             f"{prompt_text} [默认: {'是' if default else '否'}]", default=default
         )
-        console.print(f"[bold green]选择的值: {'是' if result else '否'}[/bold green]")
         return result
 
     @staticmethod
@@ -239,9 +236,12 @@ class InteractionTUI:
             mode = InteractionTUI.get_enum_choice(
                 CompressionMode, "选择压缩模式", default=CompressionMode.Best
             )
-            threads = InteractionTUI.get_int_input(
-                "处理线程数 (留空使用系统优化值)", default=None
-            )
+            if not InteractionTUI.thread_num:
+                threads = InteractionTUI.get_int_input(
+                    "处理线程数 (留空使用系统优化值)", default=None
+                )
+            else:
+                threads = InteractionTUI.thread_num
             recursion = InteractionTUI.get_bool_input(
                 "是否递归处理子目录?", default=True
             )
@@ -259,6 +259,7 @@ class InteractionTUI:
                     thread_num=threads,
                     recursion=recursion,
                     override=override,
+                    suffix=InteractionTUI.suffix if InteractionTUI.suffix else None,
                 )
                 elapsed = time.time() - start_time
                 console.print(
@@ -319,9 +320,12 @@ class InteractionTUI:
             mode = InteractionTUI.get_enum_choice(
                 RotationMode, "选择旋转方向", default=RotationMode.Clockwise
             )
-            threads = InteractionTUI.get_int_input(
-                "处理线程数 (留空使用系统优化值)", default=None
-            )
+            if not InteractionTUI.thread_num:
+                threads = InteractionTUI.get_int_input(
+                    "处理线程数 (留空使用系统优化值)", default=None
+                )
+            else:
+                threads = InteractionTUI.thread_num
             recursion = InteractionTUI.get_bool_input(
                 "是否递归处理子目录?", default=True
             )
@@ -340,6 +344,7 @@ class InteractionTUI:
                     thread_num=threads,
                     recursion=recursion,
                     override=override,
+                    suffix=InteractionTUI.suffix if InteractionTUI.suffix else None,
                 )
                 elapsed = time.time() - start_time
                 console.print(
@@ -403,9 +408,12 @@ class InteractionTUI:
             format = InteractionTUI.get_enum_choice(
                 ImageFormat, "选择目标格式", default=ImageFormat.PNG
             )
-            threads = InteractionTUI.get_int_input(
-                "处理线程数 (留空使用系统优化值)", default=None
-            )
+            if not InteractionTUI.thread_num:
+                threads = InteractionTUI.get_int_input(
+                    "处理线程数 (留空使用系统优化值)", default=None
+                )
+            else:
+                threads = InteractionTUI.thread_num
             recursion = InteractionTUI.get_bool_input(
                 "是否递归处理子目录?", default=True
             )
@@ -423,6 +431,7 @@ class InteractionTUI:
                     thread_num=threads,
                     recursion=recursion,
                     override=override,
+                    suffix=InteractionTUI.suffix if InteractionTUI.suffix else None,
                 )
                 elapsed = time.time() - start_time
                 console.print(
@@ -477,9 +486,12 @@ class InteractionTUI:
         save_mode = InteractionTUI.get_enum_choice(
             SaveFileMode, "选择文件保存模式", default=SaveFileMode.SaveFirst
         )
-        threads = InteractionTUI.get_int_input(
-            "处理线程数 (留空使用系统优化值)", default=None
-        )
+        if not InteractionTUI.thread_num:
+            threads = InteractionTUI.get_int_input(
+                "处理线程数 (留空使用系统优化值)", default=None
+            )
+        else:
+            threads = InteractionTUI.thread_num
         override = InteractionTUI.get_bool_input(
             "是否在原目录中删除重复图片?", default=True
         )
@@ -533,9 +545,12 @@ class InteractionTUI:
                 "选择超分模型",
                 default=SuperResolutionModel.UpconvAnime,
             )
-            threads = InteractionTUI.get_int_input(
-                "处理线程数 (留空使用系统优化值)", default=None
-            )
+            if not InteractionTUI.thread_num:
+                threads = InteractionTUI.get_int_input(
+                    "处理线程数 (留空使用系统优化值)", default=None
+                )
+            else:
+                threads = InteractionTUI.thread_num
             recursion = InteractionTUI.get_bool_input(
                 "是否递归处理子目录?", default=True
             )
@@ -555,6 +570,7 @@ class InteractionTUI:
                     thread_num=threads,
                     recursion=recursion,
                     override=override,
+                    suffix=InteractionTUI.suffix if InteractionTUI.suffix else None,
                 )
                 elapsed = time.time() - start_time
                 console.print(
@@ -633,7 +649,24 @@ class InteractionTUI:
         process_type = ChinesePrompt.ask(
             "请选择处理类型", choices=["0", "1", "2"], default="0"
         )
-        console.log(f"用户选择的设置选项: {process_type}")
+
+        match process_type:
+            case "0":
+                return
+            case "1":
+                suffix = ChinesePrompt.ask(
+                    "请输入图片后缀（多个用逗号分隔）",
+                    default="jpg,jpeg,png,gif,bmp,webp",
+                )
+                suffix = tuple(suffix.split(","))
+                InteractionTUI.suffix = suffix
+                console.print(f"[bold green]设置成功: {suffix}[/bold green]")
+            case "2":
+                thread_num = InteractionTUI.get_int_input(
+                    "请输入线程数 (留空使用系统优化值)", default=None
+                )
+                InteractionTUI.thread_num = thread_num
+                console.print(f"[bold green]设置成功: {thread_num}[/bold green]")
 
     @staticmethod
     def interactive_cli():
@@ -673,6 +706,10 @@ class InteractionTUI:
             input("\n按Enter键继续...")
 
 if __name__ == '__main__':
+    from PIL import Image
+
+    Image.MAX_IMAGE_PIXELS = None
+
     try:
         InteractionTUI.interactive_cli()
     except KeyboardInterrupt:
