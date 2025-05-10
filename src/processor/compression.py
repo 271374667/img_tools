@@ -62,12 +62,17 @@ class Compression(BaseProcessor):
             detect_new_file_generator = IOuitls.detect_new_files(img_dir_path)
             next(detect_new_file_generator)  # 第一次迭代，记录初始文件集
 
-        # 使用ProcessPoolExecutor进行多进程处理
         with ProcessPoolExecutor(max_workers=thread_num) as executor:
-            # 提交所有任务到进程池，使用静态方法
+            # 提交所有任务到进程池，传递输出目录参数
             futures = [
                 executor.submit(
-                    Compression._process_wrapper, img_path, compression, override
+                    Compression._process_wrapper,
+                    img_path,
+                    compression,
+                    override,
+                    output_dir
+                    if not override
+                    else None,  # 只在非覆盖模式下传递输出目录
                 )
                 for img_path in img_paths
             ]
@@ -82,14 +87,6 @@ class Compression(BaseProcessor):
                 if isinstance(result, str) and result.startswith("Error"):
                     print(result)
                 results.append(result)
-        if not override:
-            # 第二次迭代，获取新增文件
-            new_files = next(detect_new_file_generator)
-            # 将所有新增的文件给移动到输出目录
-            if new_files:
-                for new_file in new_files:
-                    # 移动文件
-                    new_file.rename(output_dir / new_file.name)
 
         return output_dir
 
@@ -202,18 +199,53 @@ class Compression(BaseProcessor):
             return output_path
 
     def _process_single_image(
-        self, img_path, compression=CompressionMode.Best, override=True
+        self, img_path, compression=CompressionMode.Best, override=True, output_dir=None
     ):
         try:
-            return self.process(img_path, compression=compression, override=override)
+            img_path = Path(img_path)
+            if override:
+                return self.process(
+                    img_path, compression=compression, override=override
+                )
+            else:
+                # 如果提供了输出目录，计算相对于原始目录的路径
+                if output_dir:
+                    # 计算目标路径保持原始相对路径结构
+                    rel_path = img_path.name  # 只保留文件名
+                    target_path = output_dir / rel_path
+
+                    # 处理图片
+                    result = self.process(
+                        img_path, compression=compression, override=False
+                    )
+
+                    # 确保目标目录存在
+                    target_path.parent.mkdir(parents=True, exist_ok=True)
+
+                    # 移动处理后的文件到目标位置
+                    import shutil
+
+                    shutil.copy2(result, target_path)
+                    # 删除临时文件
+                    if result.exists():
+                        result.unlink()
+
+                    return target_path
+                else:
+                    return self.process(
+                        img_path, compression=compression, override=False
+                    )
         except Exception as e:
             return f"Error processing {img_path}: {e}"
 
     @staticmethod
-    def _process_wrapper(img_path, compression=CompressionMode.Best, override=True):
+    def _process_wrapper(
+        img_path, compression=CompressionMode.Best, override=True, output_dir=None
+    ):
         # 创建新实例确保线程安全
         processor = Compression()
-        return processor._process_single_image(img_path, compression, override)
+        return processor._process_single_image(img_path, compression, override, output_dir)
+
 
     def _determine_target_format_and_path(
         self,
