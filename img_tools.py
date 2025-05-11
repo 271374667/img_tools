@@ -22,6 +22,13 @@ if __name__ == "__main__":
             from interaction_tui import InteractionTUI
 
             InteractionTUI.interactive_cli()
+
+    except KeyboardInterrupt:
+        print("")
+        loguru.logger.info("用户中断程序")
+        sys.exit(0)
     except Exception as e:
+        print("")
         loguru.logger.error(f"发生错误: {e}")
+        sys.exit(0)
 

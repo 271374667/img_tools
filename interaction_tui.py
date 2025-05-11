@@ -12,7 +12,7 @@ from src.core.enums import (
     SuperResolutionModel,
     ImageFormat,
 )
-from src.core.constants import ASCII_LOGO, COMMON_IMAGE_SUFFIXES
+from src.core.constants import ASCII_LOGO, COMMON_IMAGE_SUFFIXES, ARGS_EXPLAIN
 from rich.panel import Panel
 from rich.table import Table
 from rich.console import Console
@@ -37,24 +37,6 @@ class ChinesePrompt(Prompt):
 class InteractionTUI:
     suffix: Optional[tuple[str, ...]] = None
     thread_num: Optional[int] = None
-
-    args_explain: Optional[dict] = {
-        "img_dir_path": "图片目录路径(目录)",
-        "img_path": "图片文件路径(单个文件)",
-        "suffix": "图片后缀名列表",
-        "thread_num": "处理器数量",
-        "recursion": "是否递归查找子目录中的图片文件",
-        "override": "是否覆盖原图",
-        "compression": "压缩模式",
-        "rotation_mode": "旋转模式",
-        "orientation": "目标方向",
-        "duplication_mode": "去重模式",
-        "save_file_mode": "文件保存模式",
-        "target_format": "目标格式",
-        "noise": "降噪等级",
-        "scale": "放大倍数",
-        "model": "超分模型",
-    }
 
     @staticmethod
     def show_ascii_logo():
@@ -97,9 +79,7 @@ class InteractionTUI:
         table.add_column("值", style="green")
 
         for key, value in kwargs.items():
-            table.add_row(
-                key, InteractionTUI.args_explain.get(key, "无说明"), str(value)
-            )
+            table.add_row(key, ARGS_EXPLAIN.get(key, "无说明"), str(value))
 
         console.print(table)
 
@@ -179,34 +159,9 @@ class InteractionTUI:
     @staticmethod
     def get_enum_description(option):
         """获取枚举选项的描述信息"""
-        descriptions = {
-            CompressionMode.Fastest: "最快速度，适中压缩率",
-            CompressionMode.Best: "平衡速度与压缩率",
-            CompressionMode.Smallest: "最高压缩率，较慢速度",
-            RotationMode.Clockwise: "顺时针旋转",
-            RotationMode.CounterClockwise: "逆时针旋转",
-            Orientation.Vertical: "垂直方向",
-            Orientation.Horizontal: "水平方向",
-            DuplicationMode.Fastest: "最快速度，适中准确率",
-            DuplicationMode.Normal: "平衡速度与准确率",
-            DuplicationMode.Best: "最高准确率，较慢速度",
-            DuplicationMode.CNN: "基于CNN的高精度检测",
-            SaveFileMode.SaveFirst: "保留每组重复中的第一个文件",
-            SaveFileMode.SaveLast: "保留每组重复中的最后一个文件",
-            SaveFileMode.SaveFirstAndLast: "保留每组重复中的第一个和最后一个文件",
-            SaveFileMode.SaveBigger: "保留每组重复中最大的文件",
-            SaveFileMode.SaveSmaller: "保留每组重复中最小的文件",
-            SuperResolutionModel.UpconvAnime: "适合动漫图片的模型",
-            SuperResolutionModel.UpconvPhoto: "适合照片的模型",
-            SuperResolutionModel.Cunet: "高质量通用模型，速度较慢",
-            ImageFormat.JPG: "JPEG格式，有损压缩，较小体积",
-            ImageFormat.JPEG: "JPEG格式，有损压缩，较小体积",
-            ImageFormat.PNG: "PNG格式，无损压缩，支持透明度",
-            ImageFormat.BMP: "BMP格式，无损且无压缩",
-            ImageFormat.WEBP: "WebP格式，谷歌开发，有损/无损，高压缩率",
-        }
+        from src.core.constants import ENUM_DESCRIPTION
 
-        return descriptions.get(option, "无描述")
+        return ENUM_DESCRIPTION.get(option, "无描述")
 
     @staticmethod
     def get_int_input(prompt_text: str, default=None, min_value=None, max_value=None):

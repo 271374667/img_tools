@@ -10,3 +10,4 @@ wheels/
 .venv
 .idea
 测试
+*.log

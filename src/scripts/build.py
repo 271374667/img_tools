@@ -2,10 +2,19 @@ import subprocess
 import time
 import loguru
 import os
+import shutil
+from pathlib import Path
 
-os.chdir(r"E:\load\python\Tools\img_tools\dist")
+dist_path = Path(r"E:\load\python\Tools\img_tools\dist")
 
-command = r'pyinstaller --noconfirm --onedir --console  "E:\load\python\Tools\img_tools\img_tools_cli.py"'
+if dist_path.exists():
+    shutil.rmtree(dist_path)
+    loguru.logger.info(f"删除 dist 目录: {dist_path}")
+dist_path.mkdir(parents=True, exist_ok=True)
+
+os.chdir(dist_path)
+
+command = r'pyinstaller --noconfirm --onedir --console  "E:\load\python\Tools\img_tools\img_tools.py"'
 
 start_time = time.time()
 subprocess.run(command, shell=True, check=True)
