@@ -1,8 +1,8 @@
 import sys
 from pathlib import Path
 from typing import Optional
-import loguru
 import typer
+import loguru
 
 from src.core.enums import (
     CompressionMode,
@@ -15,12 +15,6 @@ from src.core.enums import (
 )
 from rich.table import Table
 from rich.console import Console
-
-
-# 配置日志记录器
-logger = loguru.logger
-logger.remove()
-logger.add(sys.stderr, level="INFO")
 
 # 创建富文本控制台对象
 console = Console()
@@ -73,9 +67,9 @@ def compress_directory(
 
     示例：img_tools_cli compress dir ./images --mode best --no-override
     """
-    logger.info(f"开始压缩图片目录: {img_dir}")
-    logger.info(f"压缩模式: {mode.value}")
-    logger.info(f"是否覆盖: {override}")
+    loguru.logger.info(f"开始压缩图片目录: {img_dir}")
+    loguru.logger.info(f"压缩模式: {mode.value}")
+    loguru.logger.info(f"是否覆盖: {override}")
 
     try:
         from src.processor.compression import Compression
@@ -88,9 +82,9 @@ def compress_directory(
             recursion=recursion,
             override=override,
         )
-        logger.success(f"图片压缩完成! 结果保存在: {result_dir}")
+        loguru.logger.success(f"图片压缩完成! 结果保存在: {result_dir}")
     except Exception as e:
-        logger.error(f"压缩过程中发生错误: {e}")
+        loguru.logger.error(f"压缩过程中发生错误: {e}")
         raise typer.Exit(code=1)
 
 
@@ -114,9 +108,9 @@ def compress_file(
 
     示例：img_tools_cli compress file ./images/photo.jpg --mode smallest --no-override
     """
-    logger.info(f"开始压缩图片: {img_path}")
-    logger.info(f"压缩模式: {mode.value}")
-    logger.info(f"是否覆盖: {override}")
+    loguru.logger.info(f"开始压缩图片: {img_path}")
+    loguru.logger.info(f"压缩模式: {mode.value}")
+    loguru.logger.info(f"是否覆盖: {override}")
 
     try:
         from src.processor.compression import Compression
@@ -125,9 +119,9 @@ def compress_file(
         result_path = processor.process(
             img_path=img_path, compression=mode, override=override
         )
-        logger.success(f"图片压缩完成! 结果保存在: {result_path}")
+        loguru.logger.success(f"图片压缩完成! 结果保存在: {result_path}")
     except Exception as e:
-        logger.error(f"压缩过程中发生错误: {e}")
+        loguru.logger.error(f"压缩过程中发生错误: {e}")
         raise typer.Exit(code=1)
 
 
@@ -167,10 +161,10 @@ def rotate_directory(
 
     示例：img_tools_cli rotate dir ./images --orientation horizontal --mode clockwise
     """
-    logger.info(f"开始旋转图片目录: {img_dir}")
-    logger.info(f"目标方向: {orientation.value}")
-    logger.info(f"旋转模式: {mode.value}")
-    logger.info(f"是否覆盖: {override}")
+    loguru.logger.info(f"开始旋转图片目录: {img_dir}")
+    loguru.logger.info(f"目标方向: {orientation.value}")
+    loguru.logger.info(f"旋转模式: {mode.value}")
+    loguru.logger.info(f"是否覆盖: {override}")
 
     try:
         from src.processor.rotation import Rotation
@@ -184,9 +178,9 @@ def rotate_directory(
             recursion=recursion,
             override=override,
         )
-        logger.success(f"图片旋转完成! 结果保存在: {result_dir}")
+        loguru.logger.success(f"图片旋转完成! 结果保存在: {result_dir}")
     except Exception as e:
-        logger.error(f"旋转过程中发生错误: {e}")
+        loguru.logger.error(f"旋转过程中发生错误: {e}")
         raise typer.Exit(code=1)
 
 
@@ -216,10 +210,10 @@ def rotate_file(
 
     示例：img_tools_cli rotate file ./images/photo.jpg --orientation vertical
     """
-    logger.info(f"开始旋转图片: {img_path}")
-    logger.info(f"目标方向: {orientation.value}")
-    logger.info(f"旋转模式: {mode.value}")
-    logger.info(f"是否覆盖: {override}")
+    loguru.logger.info(f"开始旋转图片: {img_path}")
+    loguru.logger.info(f"目标方向: {orientation.value}")
+    loguru.logger.info(f"旋转模式: {mode.value}")
+    loguru.logger.info(f"是否覆盖: {override}")
 
     try:
         from src.processor.rotation import Rotation
@@ -231,9 +225,9 @@ def rotate_file(
             rotation_mode=mode,
             override=override,
         )
-        logger.success(f"图片旋转完成! 结果保存在: {result_path}")
+        loguru.logger.success(f"图片旋转完成! 结果保存在: {result_path}")
     except Exception as e:
-        logger.error(f"旋转过程中发生错误: {e}")
+        loguru.logger.error(f"旋转过程中发生错误: {e}")
         raise typer.Exit(code=1)
 
 
@@ -264,9 +258,9 @@ def convert_directory(
 
     示例：img_tools_cli convert dir ./images --format webp --no-override
     """
-    logger.info(f"开始转换图片目录: {img_dir}")
-    logger.info(f"目标格式: {format.value}")
-    logger.info(f"是否覆盖: {override}")
+    loguru.logger.info(f"开始转换图片目录: {img_dir}")
+    loguru.logger.info(f"目标格式: {format.value}")
+    loguru.logger.info(f"是否覆盖: {override}")
 
     try:
         from src.processor.format_conversion import FormatConversion
@@ -279,9 +273,9 @@ def convert_directory(
             recursion=recursion,
             override=override,
         )
-        logger.success(f"图片格式转换完成! 结果保存在: {result_dir}")
+        loguru.logger.success(f"图片格式转换完成! 结果保存在: {result_dir}")
     except Exception as e:
-        logger.error(f"格式转换过程中发生错误: {e}")
+        loguru.logger.error(f"格式转换过程中发生错误: {e}")
         raise typer.Exit(code=1)
 
 
@@ -306,9 +300,9 @@ def convert_file(
 
     示例：img_tools_cli convert file ./images/photo.jpg --format png --no-override
     """
-    logger.info(f"开始转换图片: {img_path}")
-    logger.info(f"目标格式: {format.value}")
-    logger.info(f"是否覆盖: {override}")
+    loguru.logger.info(f"开始转换图片: {img_path}")
+    loguru.logger.info(f"目标格式: {format.value}")
+    loguru.logger.info(f"是否覆盖: {override}")
 
     try:
         from src.processor.format_conversion import FormatConversion
@@ -317,9 +311,9 @@ def convert_file(
         result_path = processor.process(
             img_path=img_path, target_format=format.value, override=override
         )
-        logger.success(f"图片格式转换完成! 结果保存在: {result_path}")
+        loguru.logger.success(f"图片格式转换完成! 结果保存在: {result_path}")
     except Exception as e:
-        logger.error(f"格式转换过程中发生错误: {e}")
+        loguru.logger.error(f"格式转换过程中发生错误: {e}")
         raise typer.Exit(code=1)
 
 
@@ -359,10 +353,10 @@ def deduplicate_directory(
 
     示例：img_tools_cli dedup dir ./images --mode best --save-mode save_bigger --no-override
     """
-    logger.info(f"开始检测重复图片: {img_dir}")
-    logger.info(f"去重模式: {mode.value}")
-    logger.info(f"保存模式: {save_mode.value}")
-    logger.info(f"是否在原目录删除: {override}")
+    loguru.logger.info(f"开始检测重复图片: {img_dir}")
+    loguru.logger.info(f"去重模式: {mode.value}")
+    loguru.logger.info(f"保存模式: {save_mode.value}")
+    loguru.logger.info(f"是否在原目录删除: {override}")
 
     try:
         from src.processor.duplication import Duplication
@@ -375,9 +369,9 @@ def deduplicate_directory(
             override=override,
             thread_num=threads,
         )
-        logger.success(f"图片去重完成! 结果保存在: {result_dir}")
+        loguru.logger.success(f"图片去重完成! 结果保存在: {result_dir}")
     except Exception as e:
-        logger.error(f"去重过程中发生错误: {e}")
+        loguru.logger.error(f"去重过程中发生错误: {e}")
         raise typer.Exit(code=1)
 
 
@@ -417,11 +411,11 @@ def upscale_directory(
 
     示例：img_tools_cli upscale dir ./images --scale 2 --noise 1 --model upconv_7_anime
     """
-    logger.info(f"开始超分辨率处理图片目录: {img_dir}")
-    logger.info(f"放大倍数: {scale}")
-    logger.info(f"降噪等级: {noise}")
-    logger.info(f"使用模型: {model.value}")
-    logger.info(f"是否覆盖: {override}")
+    loguru.logger.info(f"开始超分辨率处理图片目录: {img_dir}")
+    loguru.logger.info(f"放大倍数: {scale}")
+    loguru.logger.info(f"降噪等级: {noise}")
+    loguru.logger.info(f"使用模型: {model.value}")
+    loguru.logger.info(f"是否覆盖: {override}")
 
     try:
         from src.processor.super_resolution import SuperResolution
@@ -436,9 +430,9 @@ def upscale_directory(
             recursion=recursion,
             override=override,
         )
-        logger.success(f"图片超分辨率处理完成! 结果保存在: {result_dir}")
+        loguru.logger.success(f"图片超分辨率处理完成! 结果保存在: {result_dir}")
     except Exception as e:
-        logger.error(f"超分辨率处理过程中发生错误: {e}")
+        loguru.logger.error(f"超分辨率处理过程中发生错误: {e}")
         raise typer.Exit(code=1)
 
 
@@ -472,11 +466,11 @@ def upscale_file(
 
     示例：img_tools_cli upscale file ./images/photo.jpg --scale 3 --noise 2 --model cunet
     """
-    logger.info(f"开始超分辨率处理图片: {img_path}")
-    logger.info(f"放大倍数: {scale}")
-    logger.info(f"降噪等级: {noise}")
-    logger.info(f"使用模型: {model.value}")
-    logger.info(f"是否覆盖: {override}")
+    loguru.logger.info(f"开始超分辨率处理图片: {img_path}")
+    loguru.logger.info(f"放大倍数: {scale}")
+    loguru.logger.info(f"降噪等级: {noise}")
+    loguru.logger.info(f"使用模型: {model.value}")
+    loguru.logger.info(f"是否覆盖: {override}")
 
     try:
         from src.processor.super_resolution import SuperResolution
@@ -485,9 +479,9 @@ def upscale_file(
         result_path = processor.process(
             img_path=img_path, noise=noise, scale=scale, model=model, override=override
         )
-        logger.success(f"图片超分辨率处理完成! 结果保存在: {result_path}")
+        loguru.logger.success(f"图片超分辨率处理完成! 结果保存在: {result_path}")
     except Exception as e:
-        logger.error(f"超分辨率处理过程中发生错误: {e}")
+        loguru.logger.error(f"超分辨率处理过程中发生错误: {e}")
         raise typer.Exit(code=1)
 
 

@@ -1,8 +1,10 @@
+import shutil
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Literal, Optional
 
 import GPUtil
+import loguru
 from PIL import Image
 from tqdm import tqdm
 from waifu2x_ncnn_py import Waifu2x
@@ -48,6 +50,23 @@ class SuperResolution:
         # 获取目录下所有图片文件路径
         img_paths = IOuitls.get_img_paths_by_dir(img_dir_path, recursion, suffix)
 
+        # 确定输出目录
+        output_dir = (
+            img_dir_path
+            if override
+            else img_dir_path.with_name(f"{img_dir_path.stem}_sr{scale}x")
+        )
+
+        # 创建输出目录(如果不覆盖原图)
+        if not override:
+            if output_dir.exists():
+                shutil.rmtree(output_dir)
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            # 记录一下原图片路径
+            detect_new_file_generator = IOuitls.detect_new_files(img_dir_path)
+            next(detect_new_file_generator)  # 第一次迭代，记录初始文件集
+
         # 使用ProcessPoolExecutor进行多进程处理
         with ProcessPoolExecutor(max_workers=thread_num) as executor:
             # 提交所有任务到进程池，使用静态方法
@@ -72,15 +91,20 @@ class SuperResolution:
                 result = future.result()
                 # 如果结果是错误消息，则打印出来
                 if isinstance(result, str) and result.startswith("Error"):
-                    print(result)
+                    loguru.logger.error(result)
                 results.append(result)
 
-        # 确定输出目录
-        output_dir = (
-            img_dir_path
-            if override
-            else img_dir_path.with_name(f"{img_dir_path.stem}_sr{scale}x")
-        )
+        if not override:
+            # 第二次迭代，获取新增文件
+            new_files = next(detect_new_file_generator)
+            if new_files:
+                for new_file in new_files:
+                    # 移动文件
+                    print(new_file.name.removesuffix("_out"))
+                    shutil.move(new_file, output_dir / new_file.name)
+
+            for i in output_dir.glob("**/*_out*"):
+                i.rename(i.with_stem(i.stem.removesuffix("_out")))
 
         return output_dir
 
@@ -125,7 +149,6 @@ class SuperResolution:
             return output_img_path
 
     # 静态方法，用于多进程处理
-
     def _process_single_image(
         self,
         img_path,

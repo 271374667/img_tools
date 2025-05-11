@@ -2,7 +2,6 @@ import sys
 import time
 from pathlib import Path
 from typing import Optional
-import loguru
 
 from src.core.enums import (
     CompressionMode,
@@ -19,11 +18,6 @@ from rich.table import Table
 from rich.console import Console
 from rich.prompt import IntPrompt, Confirm
 from rich.prompt import Prompt
-
-# 配置日志记录器
-logger = loguru.logger
-logger.remove()
-logger.add(sys.stderr, level="INFO")
 
 # 创建富文本控制台对象
 console = Console()
