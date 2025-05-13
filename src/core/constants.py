@@ -1,4 +1,4 @@
-from typing import Final, Optional
+from typing import Final
 import textwrap
 from enum import Enum
 from src.core.enums import (

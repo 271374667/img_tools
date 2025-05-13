@@ -2,6 +2,7 @@ import sys
 import loguru
 from pathlib import Path
 
+
 # 配置日志记录器(保存一份到本地log.log)
 loguru.logger.add(
     Path(__file__).resolve().parent / "log.log",
@@ -9,6 +10,7 @@ loguru.logger.add(
     retention="7 days",
     level="DEBUG",
 )
+
 
 # TODO: 图片水印
 # TODO: 图片上色

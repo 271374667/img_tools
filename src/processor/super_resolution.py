@@ -1,5 +1,5 @@
 import shutil
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Literal, Optional
 
@@ -33,7 +33,7 @@ class SuperResolution:
             noise: 降噪等级 (-1, 0, 1, 2, 3)
             scale: 放大倍数 (1, 2, 3, 4)
             model: 超分模型
-            thread_num: 处理器数量 (进程池大小)
+            thread_num: 处理器数量 (线程池大小)
             recursion: 是否递归查找子目录中的图片文件
             suffix: 允许的图片文件后缀名列表(不填则使用默认的常见图片后缀名)
             override: 是否覆盖原图(True 则修改原图，False 则保存为带 `_out` 后缀的新文件)
@@ -67,12 +67,12 @@ class SuperResolution:
             detect_new_file_generator = IOuitls.detect_new_files(img_dir_path)
             next(detect_new_file_generator)  # 第一次迭代，记录初始文件集
 
-        # 使用ProcessPoolExecutor进行多进程处理
-        with ProcessPoolExecutor(max_workers=thread_num) as executor:
-            # 提交所有任务到进程池，使用静态方法
+        # 使用ThreadPoolExecutor进行多线程处理
+        with ThreadPoolExecutor(max_workers=thread_num) as executor:
+            # 提交所有任务到线程池
             futures = [
                 executor.submit(
-                    SuperResolution._process_wrapper,
+                    self._process_single_image,
                     img_path,
                     noise,
                     scale,
@@ -148,7 +148,7 @@ class SuperResolution:
                 image.save(str(output_img_path), quality=95)
             return output_img_path
 
-    # 静态方法，用于多进程处理
+    # 用于多线程处理的方法
     def _process_single_image(
         self,
         img_path,
@@ -163,20 +163,6 @@ class SuperResolution:
             )
         except Exception as e:
             return f"Error processing {img_path}: {e}"
-
-    @staticmethod
-    def _process_wrapper(
-        img_path,
-        noise=0,
-        scale=2,
-        model=SuperResolutionModel.UpconvAnime,
-        override=True,
-    ):
-        # 创建新实例确保线程安全
-        processor = SuperResolution()
-        return processor._process_single_image(
-            img_path, noise=noise, scale=scale, model=model, override=override
-        )
 
 
 if __name__ == "__main__":
